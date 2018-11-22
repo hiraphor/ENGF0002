@@ -11,13 +11,13 @@ class AutoPlayer():
     def next_move(self, gamestate):
         ''' next_move() is called by the game, once per move.
             gamestate supplies access to all the state needed to autoplay the game.'''
-        self.random_next_move(gamestate)
+        #self.random_next_move(gamestate)
 
                 
     def appraise_position(self, gamestate):
-
-
-
+        return 0
+    
+    
     def search_all_left(self, gamestate):
         left = Direction.LEFT
         numberofmoves = 1
@@ -57,7 +57,7 @@ class AutoPlayer():
             elif numberofrotations==4:
                 numberofrotations=1
                 numberofmoves+=1
-                
+
             if numberofmoves==4:
                 numberofmoves=1
  
