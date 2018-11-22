@@ -14,27 +14,98 @@ class AutoPlayer():
         self.random_next_move(gamestate)
 
                 
-    def search_all(self, gamestate):
+    def appraise_position(self, gamestate):
+
+
+
+    def search_all_left(self, gamestate):
         left = Direction.LEFT
-        right = Direction.Right
-        x = 1
-        y = 1
+        numberofmoves = 1
+        numberofrotations = 1
+        movesorrotations = abs(numberofmoves-numberofrotations)
+        movesandrotations=min(numberofmoves, numberofrotations)
         
         for i in range(16):
             clone = gamestate.clone(True)
-                for j in range(x):
-                    clone.move(left)
-                    for k in range(y):
+            if numberofmoves<numberofrotations:
+                    for j in range(movesandrotations):
+                        clone.move(left)
                         clone.rotate()
                         clone.update()
-                        if y<4:
-                            y+=1
-                        else:
-                            y=1
-                            x+=1       
+                    for k in range(movesorrotations):
+                        clone.rotate()
+                        clone.update()
+            elif numberofrotations<numberofmoves:
+                    for j in range (movesandrotations):
+                        clone.move(left)
+                        clone.rotate()
+                        clone.update()
+                    for k in range (movesorrotations):
+                        clone.move(left)
+                        clone.update()
+            elif numberofmoves==numberofrotations:
+                for j in range(movesandrotations):
+                    clone.move(left)
+                    clone.rotate()
+                    clone.update()
+
+            while (clone.update() != True):
+                clone.update()
+
+            if numberofrotations<4:
+                numberofrotations+=1
+            elif numberofrotations==4:
+                numberofrotations=1
+                numberofmoves+=1
+                
+            if numberofmoves==4:
+                numberofmoves=1
+ 
         
         
+    def search_all_right(self, gamestate):
+        right = Direction.RIGHT
+        numberofmoves = 1
+        numberofrotations = 1
+        movesorrotations = abs(numberofmoves-numberofrotations)
+        movesandrotations=min(numberofmoves, numberofrotations)
         
+        for i in range(20):
+            clone = gamestate.clone(True)
+            if numberofmoves<numberofrotations:
+                    for j in range(movesandrotations):
+                        clone.move(right)
+                        clone.rotate()
+                        clone.update()
+                    for k in range(movesorrotations):
+                        clone.rotate()
+                        clone.update()
+            elif numberofrotations<numberofmoves:
+                    for j in range (movesandrotations):
+                        clone.move(right)
+                        clone.rotate()
+                        clone.update()
+                    for k in range (movesorrotations):
+                        clone.move(right)
+                        clone.update()
+
+            if numberofmoves==numberofrotations:
+                for j in range(movesandrotations):
+                    clone.move(right)
+                    clone.rotate()
+                    clone.update()
+
+            while (clone.update() != True):
+                clone.update()
+
+            if numberofrotations<4:
+                numberofrotations+=1
+            elif numberofrotations==4:
+                numberofrotations=1
+                numberofmoves+=1
+
+            if numberofmoves==4:
+                numberofmoves=1
         
         
         
