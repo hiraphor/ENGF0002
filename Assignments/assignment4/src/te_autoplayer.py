@@ -232,5 +232,5 @@ def score_calculator(blocklist, rows_cleared):
         
     print('agg_height: ',agg_height, '\n', 'bumpiness: ',bumpiness, '\n', 'num_holes: ', number_of_holes, '\n', 'num_rows: ', rows_cleared)
 
-    return ((-0.51*agg_height) + (-0.3566*number_of_holes) + (-0.18 * bumpiness) + (0.76*rows_cleared))
+    return ((-0.51*agg_height) + (-0.3566*number_of_holes) + (-0.18 * bumpiness) + (0.5*rows_cleared))
 
