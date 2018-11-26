@@ -1,129 +1,214 @@
 ''' Implement an AI to play tetris '''
 from random import Random
 from te_settings import Direction
+import time
+
+bestmove = [-100000, 0, 0, 0, 0]
+counter1=0
+counter2=0
+counter3=0
+somex=0
+
 
 class AutoPlayer():
+
+    
+
+
     ''' A very simple dumb AutoPlayer controller '''
     def __init__(self, controller):
         self.controller = controller
         self.rand = Random()
 
+
     def next_move(self, gamestate):
         ''' next_move() is called by the game, once per move.
             gamestate supplies access to all the state needed to autoplay the game.'''
-        #self.random_next_move(gamestate)
+        if gamestate.get_falling_block_position()[1] == 1:
+            self.search_all('right', gamestate)
+            self.search_all('left', gamestate)
+        else:
+            self.makemove(gamestate)
 
-                
-    def appraise_position(self, gamestate):
-        return 0
-    
-    
-    def search_all_left(self, gamestate):
+
+
+
+
+    def makemove(self, gamestate):
+
         left = Direction.LEFT
-        numberofmoves = 1
-        numberofrotations = 1
-        movesorrotations = abs(numberofmoves-numberofrotations)
-        movesandrotations=min(numberofmoves, numberofrotations)
-        
-        for i in range(16):
-            clone = gamestate.clone(True)
-            if numberofmoves<numberofrotations:
-                    for j in range(movesandrotations):
-                        clone.move(left)
-                        clone.rotate()
-                        clone.update()
-                    for k in range(movesorrotations):
-                        clone.rotate()
-                        clone.update()
-            elif numberofrotations<numberofmoves:
-                    for j in range (movesandrotations):
-                        clone.move(left)
-                        clone.rotate()
-                        clone.update()
-                    for k in range (movesorrotations):
-                        clone.move(left)
-                        clone.update()
-            elif numberofmoves==numberofrotations:
-                for j in range(movesandrotations):
-                    clone.move(left)
-                    clone.rotate()
-                    clone.update()
-
-            while (clone.update() != True):
-                clone.update()
-
-            if numberofrotations<4:
-                numberofrotations+=1
-            elif numberofrotations==4:
-                numberofrotations=1
-                numberofmoves+=1
-
-            if numberofmoves==4:
-                numberofmoves=1
- 
-        
-        
-    def search_all_right(self, gamestate):
         right = Direction.RIGHT
-        numberofmoves = 1
-        numberofrotations = 1
-        movesorrotations = abs(numberofmoves-numberofrotations)
-        movesandrotations=min(numberofmoves, numberofrotations)
-        
-        for i in range(20):
+        global bestmove
+        global counter1
+        global counter2
+        global counter3
+
+        if bestmove[1] == -1:
+            if counter1<bestmove[2]:
+                gamestate.move(left)
+                gamestate.rotate(left)
+                counter1+=1
+
+            elif counter1==bestmove[2]:
+                if counter2<bestmove[3]:
+                    gamestate.move(left)
+                    counter2+=1
+
+                elif counter2==bestmove[3]:
+                    if counter3<bestmove[4]:
+                        gamestate.rotate(left)
+                        counter3+=1
+
+                    elif counter3==bestmove[4]:
+                            counter1=0
+                            counter2=0
+                            counter3=0
+                            bestmove = [-100000, 0, 0, 0, 0]
+            
+
+        elif bestmove[1] == 1:
+            if counter1<bestmove[2]:
+                gamestate.move(right)
+                gamestate.rotate(left)
+                counter1+=1
+
+            elif counter1==bestmove[2]:
+                if counter2<bestmove[3]:
+                    gamestate.move(right)
+                    counter2+=1
+
+                elif counter2==bestmove[3]:
+                    if counter3<bestmove[4]:
+                        gamestate.rotate(left)
+                        counter3+=1
+
+                    elif counter3==bestmove[4]:
+                            counter1=0
+                            counter2=0
+                            counter3=0
+                            bestmove = [-100000, 0, 0, 0, 0]
+
+
+    def search_all(self, direction, gamestate):
+
+        global bestmove
+        left = Direction.LEFT
+        right = Direction.RIGHT
+    
+        if direction == 'left':
+            combinations = 20
+            leftorright = left
+            z=4
+        elif direction == 'right':
+            combinations = 24
+            leftorright = right
+            z=5
+
+        numberofmoves = 0
+        numberofrotations = 0
+
+        for i in range(combinations):
             clone = gamestate.clone(True)
-            if numberofmoves<numberofrotations:
-                    for j in range(movesandrotations):
-                        clone.move(right)
-                        clone.rotate()
-                        clone.update()
-                    for k in range(movesorrotations):
-                        clone.rotate()
-                        clone.update()
-            elif numberofrotations<numberofmoves:
-                    for j in range (movesandrotations):
-                        clone.move(right)
-                        clone.rotate()
-                        clone.update()
-                    for k in range (movesorrotations):
-                        clone.move(right)
-                        clone.update()
+            movesandrotations = min(numberofmoves, numberofrotations)
 
-            if numberofmoves==numberofrotations:
-                for j in range(movesandrotations):
-                    clone.move(right)
-                    clone.rotate()
-                    clone.update()
+            rotations = numberofrotations-movesandrotations
+            moves = numberofmoves - movesandrotations
 
-            while (clone.update() != True):
+            movesorrotations = abs(moves-rotations)
+
+            for j in range (movesandrotations):
+                clone.move(leftorright)
+                clone.rotate(left)
                 clone.update()
 
-            if numberofrotations<4:
+            for k in range(movesorrotations):
+                if moves>rotations:
+                    clone.move(leftorright)
+                    clone.update()
+                elif rotations>moves:
+                    clone.rotate(left)
+                    clone.update()
+
+            for l in range(9):
+                if not clone.update():
+                    clone.update()
+
+
+            clone.print_tiles()
+            gamelist = clone.get_tiles()
+            current_score = score_calculator(gamelist)
+            print (current_score)
+
+            print('M and R: ', movesandrotations)
+            print('M: ', moves)
+            print('R: ', rotations)
+
+            for i in range(len(bestmove)):
+                print('Best Move: ', bestmove[i])
+
+
+            if current_score>bestmove[0]:
+                bestmove[0] = current_score
+                if leftorright == left:
+                    bestmove[1] = -1
+                elif leftorright == right:
+                    bestmove[1] = 1
+                bestmove[2] = movesandrotations
+                bestmove[3] = moves
+                bestmove[4] = rotations
+
+            #time.sleep(0.5)
+
+            if numberofrotations<3:
                 numberofrotations+=1
-            elif numberofrotations==4:
-                numberofrotations=1
+            elif numberofrotations==3:
+                numberofrotations=0
                 numberofmoves+=1
 
-            if numberofmoves==4:
-                numberofmoves=1
+
+
         
+def score_calculator(blocklist):
+    '''for i in range(len(blocklist)):
+        print(blocklist[i])'''
+
+
+
+
+
+    agg_height = 0
+    bumpiness = 0
+    column_height = 0
+    number_of_holes = 0
+    number_of_blocks = 0
+    col_heights = []
+    number_of_rows = 0
+    for columns in range (10):
+        for rows in range (20):
+
+            if blocklist[rows][columns]!=0:
+                if column_height==0:
+                    column_height+=(20-rows)
+                number_of_blocks+=1
+
+        col_heights.append(column_height)
+        agg_height+=column_height
+        number_of_holes += (column_height - number_of_blocks)
+        column_height = 0
+        number_of_blocks=0
+    
+    for cols in range (9):
+        bumpiness+= abs(col_heights[cols+1]-col_heights[cols])
+
+    for rows in range (20):
+        a=0
+        for columns in range(10):
+            if blocklist[rows][columns]!=0:
+                a+=1
+        if a==10:
+            number_of_rows+=1
         
-        
-        
-        ''' make a random move and a random rotation.  Not the best strategy! '''
-        rnd = self.rand.randint(-1, 1)
-        if rnd == -1:
-            direction = Direction.LEFT
-        elif rnd == 1:
-            direction = Direction.RIGHT
-        if rnd != 0:
-            gamestate.move(direction)
-        rnd = self.rand.randint(-1, 1)
-        if rnd == -1:
-            direction = Direction.LEFT
-        elif rnd == 1:
-            direction = Direction.RIGHT
-        if rnd != 0:
-            gamestate.rotate(direction)
-        gamestate.print_block_tiles()
-        
+    print('agg_height: ',agg_height, '\n', 'bumpiness: ',bumpiness, '\n', 'num_holes: ', number_of_holes, '\n', 'num_rows: ', number_of_rows)
+
+    return ((-0.51*agg_height) + (-0.3566*number_of_holes) + (-0.18 * bumpiness) + (0.76*number_of_rows))
+
