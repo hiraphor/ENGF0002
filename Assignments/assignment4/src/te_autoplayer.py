@@ -98,14 +98,15 @@ class AutoPlayer():
         if direction == 'left':
             combinations = 20
             leftorright = left
-            z=4
+
         elif direction == 'right':
             combinations = 24
             leftorright = right
-            z=5
 
         numberofmoves = 0
         numberofrotations = 0
+
+        gamescore = gamestate.get_score()
 
         for i in range(combinations):
             clone = gamestate.clone(True)
@@ -129,19 +130,38 @@ class AutoPlayer():
                     clone.rotate(left)
                     clone.update()
 
-            for l in range(9):
-                if not clone.update():
-                    clone.update()
+            while not clone.update():
+                pass
+
+            clonescore = clone.get_score()
+
+            if 100<(clonescore-gamescore)<200:
+                rowscleared = 1
+            elif 200<(clonescore-gamescore)<300:
+                rowscleared=2
+            elif 300<(clonescore-gamescore)<400:
+                rowscleared=3
+            elif 400<(clonescore-gamescore)<500:
+                rowscleared=4
+            elif 500<(clonescore-gamescore)<600:
+                rowscleared=5
+            else:
+                rowscleared=0
+            
+
 
 
             clone.print_tiles()
             gamelist = clone.get_tiles()
-            current_score = score_calculator(gamelist)
+            current_score = score_calculator(gamelist, rowscleared)
             print (current_score)
-
+            #time.sleep(3)
             print('M and R: ', movesandrotations)
             print('M: ', moves)
             print('R: ', rotations)
+
+
+
 
             for i in range(len(bestmove)):
                 print('Best Move: ', bestmove[i])
@@ -168,7 +188,7 @@ class AutoPlayer():
 
 
         
-def score_calculator(blocklist):
+def score_calculator(blocklist, rows_cleared):
     '''for i in range(len(blocklist)):
         print(blocklist[i])'''
 
@@ -182,7 +202,7 @@ def score_calculator(blocklist):
     number_of_holes = 0
     number_of_blocks = 0
     col_heights = []
-    number_of_rows = 0
+
     for columns in range (10):
         for rows in range (20):
 
@@ -200,15 +220,17 @@ def score_calculator(blocklist):
     for cols in range (9):
         bumpiness+= abs(col_heights[cols+1]-col_heights[cols])
 
-    for rows in range (20):
+
+
+    '''for rows in range (20):
         a=0
         for columns in range(10):
             if blocklist[rows][columns]!=0:
                 a+=1
         if a==10:
-            number_of_rows+=1
+            number_of_rows+=1'''
         
-    print('agg_height: ',agg_height, '\n', 'bumpiness: ',bumpiness, '\n', 'num_holes: ', number_of_holes, '\n', 'num_rows: ', number_of_rows)
+    print('agg_height: ',agg_height, '\n', 'bumpiness: ',bumpiness, '\n', 'num_holes: ', number_of_holes, '\n', 'num_rows: ', rows_cleared)
 
-    return ((-0.51*agg_height) + (-0.3566*number_of_holes) + (-0.18 * bumpiness) + (0.76*number_of_rows))
+    return ((-0.51*agg_height) + (-0.3566*number_of_holes) + (-0.18 * bumpiness) + (0.76*rows_cleared))
 
