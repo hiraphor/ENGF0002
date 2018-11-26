@@ -201,6 +201,7 @@ def score_calculator(blocklist, rows_cleared):
     column_height = 0
     number_of_holes = 0
     number_of_blocks = 0
+    blockstouching=0
     col_heights = []
 
     for columns in range (10):
@@ -209,6 +210,8 @@ def score_calculator(blocklist, rows_cleared):
             if blocklist[rows][columns]!=0:
                 if column_height==0:
                     column_height+=(20-rows)
+                if rows<=18 and blocklist[rows+1][columns]!=0:
+                    blockstouching+=1
                 number_of_blocks+=1
 
         col_heights.append(column_height)
@@ -232,5 +235,5 @@ def score_calculator(blocklist, rows_cleared):
         
     print('agg_height: ',agg_height, '\n', 'bumpiness: ',bumpiness, '\n', 'num_holes: ', number_of_holes, '\n', 'num_rows: ', rows_cleared)
 
-    return ((-0.51*agg_height) + (-0.3566*number_of_holes) + (-0.18 * bumpiness) + (0.5*rows_cleared))
+    return ((-0.51*agg_height) + (-0.3566*number_of_holes) + (-0.18 * bumpiness) + (0.2*rows_cleared) + (0.1*blockstouching))
 
