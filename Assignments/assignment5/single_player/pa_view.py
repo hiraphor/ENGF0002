@@ -47,7 +47,7 @@ class PacmanView(GameObjectView):
         for dir in [Direction.UP, Direction.RIGHT, Direction.DOWN]:
             pnglist = []
             for image in prevlist:
-                newimage = self.rotate_image(image, Direction.RIGHT)
+                newimage = self.__rotate_image(image, Direction.RIGHT)
                 pnglist.append(newimage)
             self.__pngs[dir] = pnglist
             prevlist = pnglist
@@ -58,7 +58,7 @@ class PacmanView(GameObjectView):
         self.__dying = False
         self.draw()
 
-    def rotate_image(self, img, dir):
+    def __rotate_image(self, img, dir):
         w, h = img.width(), img.height()
         if dir in [Direction.LEFT, Direction.RIGHT]:
             newimg = PhotoImage(width=h, height=w)
@@ -93,14 +93,14 @@ class PacmanView(GameObjectView):
     def redraw(self, time_now):
         if time_now - self.__last_change > 0.1:
             self.__last_change = time_now
-            self.next_png()
+            self.__next_png()
             self.cleanup()
             self.draw()
         else:
             x, y = self.pacman.position
             self.moveto(x, y)
 
-    def next_png(self):
+    def __next_png(self):
         if self.__dying:
             self.__pngnum = self.__pngnum + 1
             return
@@ -193,52 +193,52 @@ class View(Frame):
         self.frame = root
         self.canvas = Canvas(self.frame, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, bg="black")
         self.canvas.pack(side = LEFT, fill=BOTH, expand=FALSE)
-        self.init_fonts()
-        self.init_score()
-        self.messages_displayed = False
+        self.__init_fonts()
+        self.__init_score()
+        self.__messages_displayed = False
         self.lives = 0
         self.lives_pacmen = []
-        self.ghost_views = []
-        self.pacman_views = []
-        self.food = {}  # we use a dict to store food, indexed by grid coordinates
-        self.powerpills = {} # also a dict
+        self.__ghost_views = []
+        self.__pacman_views = []
+        self.__food = {}  # we use a dict to store food, indexed by grid coordinates
+        self.__powerpills = {} # also a dict
         self.audio = Audio()
 
         #Load all the images from files
-        self.pacman_pngs = []
+        self.__pacman_pngs = []
         for i in range(0, 3):
-            self.pacman_pngs.append(PhotoImage(file = './assets/pacman' + str(i) + '.gif').zoom(2))
-        self.pacman_dying_pngs = []
+            self.__pacman_pngs.append(PhotoImage(file = './assets/pacman' + str(i) + '.gif').zoom(2))
+        self.__pacman_dying_pngs = []
         for i in range(1, 11):
-            self.pacman_dying_pngs.append(PhotoImage(file = './assets/pacman_dying' + str(i) + '.gif').zoom(2))
-        self.ghost_left_pngs = []
+            self.__pacman_dying_pngs.append(PhotoImage(file = './assets/pacman_dying' + str(i) + '.gif').zoom(2))
+        self.__ghost_left_pngs = []
         for i in range(0, 4):
-            self.ghost_left_pngs.append(PhotoImage(file = './assets/ghost' + str(i) + '.gif').zoom(2))
-        self.ghost_up_pngs = []
+            self.__ghost_left_pngs.append(PhotoImage(file = './assets/ghost' + str(i) + '.gif').zoom(2))
+        self.__ghost_up_pngs = []
         for i in range(0, 4):
-            self.ghost_up_pngs.append(PhotoImage(file = './assets/ghost' + str(i) + 'up.gif').zoom(2))
-        self.ghost_down_pngs = []
+            self.__ghost_up_pngs.append(PhotoImage(file = './assets/ghost' + str(i) + 'up.gif').zoom(2))
+        self.__ghost_down_pngs = []
         for i in range(0, 4):
-            self.ghost_down_pngs.append(PhotoImage(file = './assets/ghost' + str(i) + 'down.gif').zoom(2))
-        self.ghost_scared_pngs = []
-        self.ghost_scared_pngs.append(PhotoImage(file = './assets/ghostscared.gif').zoom(2))
-        self.ghost_scared_pngs.append(PhotoImage(file = './assets/ghostscaredending.gif').zoom(2))
-        self.ghost_eyes_pngs = []
+            self.__ghost_down_pngs.append(PhotoImage(file = './assets/ghost' + str(i) + 'down.gif').zoom(2))
+        self.__ghost_scared_pngs = []
+        self.__ghost_scared_pngs.append(PhotoImage(file = './assets/ghostscared.gif').zoom(2))
+        self.__ghost_scared_pngs.append(PhotoImage(file = './assets/ghostscaredending.gif').zoom(2))
+        self.__ghost_eyes_pngs = []
         for i in range(0,4):
-            self.ghost_eyes_pngs.append(PhotoImage(file = './assets/eyes' + str(i) + '.gif').zoom(2))
+            self.__ghost_eyes_pngs.append(PhotoImage(file = './assets/eyes' + str(i) + '.gif').zoom(2))
             
-        self.food_png = PhotoImage(file = './assets/food.gif').zoom(2)
-        self.powerpill_png = PhotoImage(file = './assets/powerpill.gif').zoom(2)
+        self.__food_png = PhotoImage(file = './assets/food.gif').zoom(2)
+        self.__powerpill_png = PhotoImage(file = './assets/powerpill.gif').zoom(2)
 
-    def init_fonts(self):
-        self.bigfont = font.nametofont("TkDefaultFont")
-        self.bigfont.configure(size=48)
-        self.scorefont = font.nametofont("TkDefaultFont")
-        self.scorefont.configure(size=20)
+    def __init_fonts(self):
+        self.__bigfont = font.nametofont("TkDefaultFont")
+        self.__bigfont.configure(size=48)
+        self.__scorefont = font.nametofont("TkDefaultFont")
+        self.__scorefont.configure(size=20)
 
-    def init_score(self):
-        self.score_text = self.canvas.create_text(5, 5, anchor="nw")
-        self.canvas.itemconfig(self.score_text, text="Score:", font=self.scorefont, fill="white")
+    def __init_score(self):
+        self.__score_text = self.canvas.create_text(5, 5, anchor="nw")
+        self.canvas.itemconfig(self.__score_text, text="Score:", font=self.__scorefont, fill="white")
 
     def update_maze(self, maze):
         s = ""
@@ -312,67 +312,69 @@ class View(Frame):
         #print(s)
 
     def register_pacman(self, pacman_model):
-        self.pacman_views.append(PacmanView(self.canvas, pacman_model, self.pacman_pngs, self.pacman_dying_pngs))
+        self.__pacman_views.append(PacmanView(self.canvas, pacman_model, self.__pacman_pngs, self.__pacman_dying_pngs))
 
     def unregister_pacman(self, pacman_model):
-        for view in self.pacman_views:
+        for view in self.__pacman_views:
             if view.pacman == pacman_model:
                 view.cleanup()
-            self.pacman_views.remove(view)
+            self.__pacman_views.remove(view)
             return
 
     def register_ghost(self, ghost_model):
         ghostnum = ghost_model.ghostnum
         pngs = []
-        pngs.append(self.ghost_up_pngs[ghostnum])
-        pngs.append(self.ghost_left_pngs[ghostnum])
-        pngs.append(self.reflect_image(self.ghost_left_pngs[ghostnum]))
-        pngs.append(self.ghost_down_pngs[ghostnum])
-        self.ghost_views.append(GhostView(self.canvas, ghost_model, pngs, self.ghost_eyes_pngs, self.ghost_scared_pngs))
+        pngs.append(self.__ghost_up_pngs[ghostnum])
+        pngs.append(self.__ghost_left_pngs[ghostnum])
+        pngs.append(self.__reflect_image(self.__ghost_left_pngs[ghostnum]))
+        pngs.append(self.__ghost_down_pngs[ghostnum])
+        self.__ghost_views.append(GhostView(self.canvas, ghost_model, pngs, self.__ghost_eyes_pngs, self.__ghost_scared_pngs))
 
     def register_food(self, coord_list):
         for coords in coord_list:
-            food = Food(self.canvas, coords, self.food_png)
-            self.food[coords] = food
+            food = Food(self.canvas, coords, self.__food_png)
+            self.__food[coords] = food
 
     def register_powerpills(self, coord_list):
         for coords in coord_list:
             # we use a Food object with a powerpill image
-            powerpill = Food(self.canvas, coords, self.powerpill_png)
-            self.powerpills[coords] = powerpill
+            powerpill = Food(self.canvas, coords, self.__powerpill_png)
+            self.__powerpills[coords] = powerpill
 
     def eat_food(self, coords):
-        food = self.food[coords]
+        food = self.__food[coords]
         food.eat()
-        self.food.pop(coords)
+        self.__food.pop(coords)
         self.audio.play(0)
 
     def eat_powerpill(self, coords):
-        powerpill = self.powerpills[coords]
+        powerpill = self.__powerpills[coords]
         powerpill.eat()
-        self.powerpills.pop(coords)
+        self.__powerpills.pop(coords)
         self.audio.play(0)
 
     def ghost_died(self):
         self.audio.play(3)
 
     def unregister_objects(self):
-        for view in self.ghost_views:
+        for view in self.__ghost_views:
             view.cleanup()
-        self.ghost_views.clear()
-        for coords,food in self.food.items():
+        self.__ghost_views.clear()
+        for coords,food in self.__food.items():
             food.cleanup()
-        self.food.clear()
-        for coords,pp in self.powerpills.items():
+        self.__food.clear()
+        for coords,pp in self.__powerpills.items():
             pp.cleanup()
-        self.powerpills.clear()
+        self.__powerpills.clear()
 
     def display_score(self):
-        self.canvas.itemconfig(self.score_text, text="Level: " + str(self.controller.get_level())
-                               + "  Score: " + str(self.controller.get_score()), font=self.scorefont)
+        self.canvas.itemconfig(self.__score_text, text="Level: "
+                               + str(self.controller.get_level())
+                               + "  Score: " + str(self.controller.get_score()),
+                               font=self.__scorefont)
         self.update_lives()
 
-    def reflect_image(self, img):
+    def __reflect_image(self, img):
         w, h = img.width(), img.height()
         newimg = PhotoImage(width=w, height=h)
         for x in range(w):
@@ -389,23 +391,23 @@ class View(Frame):
                 pacman_view.cleanup()
             self.lives_pacmen.clear()
             y = GRID_SIZE * 32  # 16 rows down is where we show the lives remaining
-            life_pngs = [self.pacman_pngs[2]]
+            life_pngs = [self.__pacman_pngs[2]]
             for i in range(0, self.lives - 1):
                 x = 2 * GRID_SIZE * (i + 1)
                 dummy = DummyPacman(x, y)
                 self.lives_pacmen.append(PacmanView(self.canvas, dummy, life_pngs, []))
 
     def died(self, pacman):
-        if len(self.pacman_views) == 1:
+        if len(self.__pacman_views) == 1:
             # only one pacman - normal gameplay
-            self.pacman_views[0].died()
+            self.__pacman_views[0].died()
             self.audio.play(2)
-            for ghost in self.ghost_views:
+            for ghost in self.__ghost_views:
                 ghost.cleanup()
-            self.ghost_views.clear()
+            self.__ghost_views.clear()
         else:
             # multiple pacmen - only one dies
-            for view in self.pacman_views:
+            for view in self.__pacman_views:
                 if view.pacman == pacman:
                     view.died()
                     self.audio.play(2)
@@ -417,25 +419,25 @@ class View(Frame):
     def game_over(self):
         x = 14 * GRID_SIZE + L_OFF
         y = 11 * GRID_SIZE + T_OFF
-        self.text = self.canvas.create_text(x, y, anchor="c")
-        self.canvas.itemconfig(self.text, text="GAME OVER!", font=self.bigfont,
+        self.__text = self.canvas.create_text(x, y, anchor="c")
+        self.canvas.itemconfig(self.__text, text="GAME OVER!", font=self.__bigfont,
                                fill="white")
         y = 17 * GRID_SIZE + T_OFF
-        self.text2 = self.canvas.create_text(x, y, anchor="c")
-        self.canvas.itemconfig(self.text2, text="Press r to play again.", font=self.scorefont,
+        self.__text2 = self.canvas.create_text(x, y, anchor="c")
+        self.canvas.itemconfig(self.__text2, text="Press r to play again.", font=self.__scorefont,
                                fill="white")
-        self.messages_displayed = True
+        self.__messages_displayed = True
 
     def clear_messages(self):
-        if self.messages_displayed:
-            self.canvas.delete(self.text)
-            self.canvas.delete(self.text2)
-            self.messages_displayed = False
+        if self.__messages_displayed:
+            self.canvas.delete(self.__text)
+            self.canvas.delete(self.__text2)
+            self.__messages_displayed = False
 
     def update(self, now):
-        for view in self.pacman_views:
+        for view in self.__pacman_views:
             view.redraw(now)
-        for view in self.ghost_views:
+        for view in self.__ghost_views:
             view.redraw(now)
         self.display_score()
 
