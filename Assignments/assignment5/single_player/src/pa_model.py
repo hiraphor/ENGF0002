@@ -409,11 +409,12 @@ class Ghost(MovableObject):
 class Maze():
     def __init__(self):
         self.__levels = []
-        leveltxt = []
-        with open("maze1.txt", "rt")as f:
-            for line in f:
-                leveltxt.append(line)
-        self.__levels.append(leveltxt)
+        for i in range(1,3):
+            leveltxt = []
+            with open("maze" + str(i) + ".txt", "rt") as f:
+                for line in f:
+                    leveltxt.append(line)
+            self.__levels.append(leveltxt)
         self.__current_level = 1
         self.__tunnel_exits = [None, None]
         self.__food_count = 0

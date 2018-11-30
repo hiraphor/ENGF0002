@@ -202,6 +202,7 @@ class View(Frame):
         self.__pacman_views = []
         self.__food = {}  # we use a dict to store food, indexed by grid coordinates
         self.__powerpills = {} # also a dict
+        self.__tags = []
         self.audio = Audio()
 
         #Load all the images from files
@@ -243,6 +244,9 @@ class View(Frame):
     def update_maze(self, maze):
         s = ""
         y = 0
+        for tag in self.__tags:
+            self.canvas.delete(tag)
+        self.__tags.clear()
         for row in maze:
             for x in range(0, len(row)//3):
                 c = row[x*3:(x+1)*3]
@@ -307,6 +311,7 @@ class View(Frame):
                     s += " B "
                 else:
                     s += "ERROR>>>" + c + "<<<"
+                self.__tags.append(tag)
             s += "\n"
             y += 1
         #print(s)
