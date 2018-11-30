@@ -628,7 +628,7 @@ class Model():
         #                     Direction.DOWN, 0)
         self.movables.append(self.pacman)
         controller.register_pacman(self.pacman)
-        self.game_mode = GameMode.STARTUP
+        self.__game_mode = GameMode.STARTUP
         self.pause_speedcheck()
         self.won = False
 
@@ -703,7 +703,7 @@ class Model():
         elif mode == GameMode.FRIGHTEN:
             self.start_time = time.time()
             self.start_frighten_mode()
-        self.game_mode = mode
+        self.__game_mode = mode
 
     def start_frighten_mode(self):
         x, y = self.pacman.grid_position
@@ -730,7 +730,7 @@ class Model():
         if self.lives == 0:
             self.game_over()
             return
-        self.game_mode = GameMode.CHASE
+        self.__game_mode = GameMode.CHASE
         self.pacman.reset_position()
         self.create_ghosts()
         self.movables.append(self.pacman)
@@ -740,7 +740,7 @@ class Model():
         self.resume_speedcheck()
 
     def game_over(self):
-        self.game_mode = GameMode.GAME_OVER
+        self.__game_mode = GameMode.GAME_OVER
         self.won = False
         self.controller.game_over()
 
@@ -848,22 +848,22 @@ class Model():
         self.lastframe = time.time()
         
     def update(self, now):
-        if self.game_mode == GameMode.CHASE or self.game_mode == GameMode.FRIGHTEN:
+        if self.__game_mode == GameMode.CHASE or self.__game_mode == GameMode.FRIGHTEN:
             self.move_objects()
             self.controller.update_score(self.score)
             self.checkspeed(now)
-            if self.game_mode == GameMode.FRIGHTEN:
+            if self.__game_mode == GameMode.FRIGHTEN:
                 if now - self.start_time > 15:
                     self.end_frighten_mode()
                 elif now - self.start_time > 10:
                     self.warn_frighten_ending()
-        elif self.game_mode == GameMode.STARTUP:
+        elif self.__game_mode == GameMode.STARTUP:
             if now - self.start_time > 5:
                 self.mode_change(GameMode.CHASE)
-        elif self.game_mode == GameMode.DYING:
+        elif self.__game_mode == GameMode.DYING:
             if now - self.start_time > 2:
                 self.new_life()
-        elif self.game_mode == GameMode.NEXT_LEVEL_WAIT:
+        elif self.__game_mode == GameMode.NEXT_LEVEL_WAIT:
             if now - self.start_time > 2:
                 self.next_level()
 
