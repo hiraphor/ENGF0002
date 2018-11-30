@@ -37,9 +37,9 @@ class PacmanView(GameObjectView):
     def __init__(self, canvas, pacman, pngs, dying_pngs):
         GameObjectView.__init__(self, canvas)
         self.pacman = pacman
-        self.pngs = [[],[],[],[]]
-        self.dying_pngs = dying_pngs
-        self.pngs[Direction.LEFT] = pngs
+        self.__pngs = [[],[],[],[]]
+        self.__dying_pngs = dying_pngs
+        self.__pngs[Direction.LEFT] = pngs
         self.pointing_direction = Direction.LEFT
 
         # rotate the image to create a PacMan facing each direction
@@ -49,13 +49,13 @@ class PacmanView(GameObjectView):
             for image in prevlist:
                 newimage = self.rotate_image(image, Direction.RIGHT)
                 pnglist.append(newimage)
-            self.pngs[dir] = pnglist
+            self.__pngs[dir] = pnglist
             prevlist = pnglist
             
-        self.pngnum = 0
-        self.pngcounter = 0
-        self.last_change = 0
-        self.dying = False
+        self.__pngnum = 0
+        self.__pngcounter = 0
+        self.__last_change = 0
+        self.__dying = False
         self.draw()
 
     def rotate_image(self, img, dir):
@@ -76,23 +76,23 @@ class PacmanView(GameObjectView):
         return newimg
 
     def draw(self):
-        if self.dying:
-            if self.pngnum >= len(self.dying_pngs):
+        if self.__dying:
+            if self.__pngnum >= len(self.__dying_pngs):
                 return
             x, y = self.pacman.position
-            image = self.canvas.create_image(L_OFF + x, T_OFF + y, image=self.dying_pngs[self.pngnum], anchor="c")
+            image = self.canvas.create_image(L_OFF + x, T_OFF + y, image=self.__dying_pngs[self.__pngnum], anchor="c")
             self.items.append(image)
         else:
             x, y = self.pacman.position
             self.moveto(0, 0)
             d = self.pointing_direction
-            image = self.canvas.create_image(L_OFF, T_OFF, image=self.pngs[d][self.pngnum], anchor="c")
+            image = self.canvas.create_image(L_OFF, T_OFF, image=self.__pngs[d][self.__pngnum], anchor="c")
             self.items.append(image)
             self.moveto(x, y)
 
     def redraw(self, time_now):
-        if time_now - self.last_change > 0.1:
-            self.last_change = time_now
+        if time_now - self.__last_change > 0.1:
+            self.__last_change = time_now
             self.next_png()
             self.cleanup()
             self.draw()
@@ -101,25 +101,25 @@ class PacmanView(GameObjectView):
             self.moveto(x, y)
 
     def next_png(self):
-        if self.dying:
-            self.pngnum = self.pngnum + 1
+        if self.__dying:
+            self.__pngnum = self.__pngnum + 1
             return
         if self.pacman.speed == 0:
             # Pacman stops with his mouth open
-            self.pngnum = 2
+            self.__pngnum = 2
         else:
-            self.pngcounter = (self.pngcounter + 1) % 4
-            self.pngnum = self.pngcounter
-            if self.pngcounter == 3:
-                self.pngnum = 1
+            self.__pngcounter = (self.__pngcounter + 1) % 4
+            self.__pngnum = self.__pngcounter
+            if self.__pngcounter == 3:
+                self.__pngnum = 1
             self.pointing_direction = self.pacman.direction
 
     def died(self):
         self.pointing_direction = Direction.UP
-        self.pngcounter = 2
-        self.pngnum = -1
-        self.dying = True
-        self.last_change = 0
+        self.__pngcounter = 2
+        self.__pngnum = -1
+        self.__dying = True
+        self.__last_change = 0
         self.redraw(time.time())
             
 class DummyPacman():
@@ -137,40 +137,39 @@ class GhostView(GameObjectView):
     def __init__(self, canvas, ghost, pngs, eyes_pngs, scared_pngs):
         GameObjectView.__init__(self, canvas)
         self.ghost = ghost
-        self.pngs = pngs
-        self.eyes_pngs = eyes_pngs
-        self.scared_pngs = scared_pngs
-        self.pngnum = 0
-        self.prev_direction = Direction.LEFT
-        self.prev_mode = self.ghost.mode
+        self.__pngs = pngs
+        self.__eyes_pngs = eyes_pngs
+        self.__scared_pngs = scared_pngs
+        self.__prev_direction = Direction.LEFT
+        self.__prev_mode = self.ghost.mode
         self.draw()
 
     def draw(self):
         x,y = self.ghost.position
         self.moveto(0, 0)
         if self.ghost.mode == GhostMode.CHASE:
-            png = self.pngs[self.ghost.direction]
+            png = self.__pngs[self.ghost.direction]
         elif self.ghost.mode == GhostMode.FRIGHTEN:
             if self.ghost.frighten_ending:
-                png = self.scared_pngs[1]
+                png = self.__scared_pngs[1]
             else:
-                png = self.scared_pngs[0]
+                png = self.__scared_pngs[0]
         elif self.ghost.mode == GhostMode.EYES:
-            png = self.eyes_pngs[self.ghost.direction]
+            png = self.__eyes_pngs[self.ghost.direction]
         image = self.canvas.create_image(L_OFF, T_OFF, image=png, anchor="c")
         self.items.append(image)
         self.moveto(x, y)
-        self.prev_mode = self.ghost.mode
+        self.__prev_mode = self.ghost.mode
 
     def redraw(self, time_now):
-        if self.ghost.direction == self.prev_direction \
-           and self.ghost.mode == self.prev_mode:
+        if self.ghost.direction == self.__prev_direction \
+           and self.ghost.mode == self.__prev_mode:
             x, y = self.ghost.position
             self.moveto(x, y)
         else:
             self.cleanup()
             self.draw()
-            self.prev_direction = self.ghost.direction
+            self.__prev_direction = self.ghost.direction
 
 class Food():
     def __init__(self, canvas, coords, food_png):
