@@ -301,6 +301,8 @@ class View(Frame):
                     s += " | "
                 elif c == "   ":
                     s += "   "
+                elif c == "###":
+                    s += "   "
                 elif c == " . ":
                     s += " . "
                 elif c == " * ":

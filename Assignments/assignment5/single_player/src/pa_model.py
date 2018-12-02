@@ -448,6 +448,8 @@ class Maze():
                     rowwalls.append(1)
                 elif c == " | ":
                     rowwalls.append(1)
+                elif c == "###":  # not really a wall, but unreachable
+                    rowwalls.append(1)
                 elif c == "   ":
                     rowwalls.append(0)
                 elif c == " . ":
