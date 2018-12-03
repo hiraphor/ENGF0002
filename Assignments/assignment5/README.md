@@ -23,7 +23,7 @@ address (which is unlikely).
 
 ## Your task
 
-Details of the task are in assignment.pdf
+Details of the task are in [assignment.pdf](https://github.com/mhandley/ENGF0002/blob/master/Assignments/assignment5/assignment.pdf)
 
 ## Controls
 
