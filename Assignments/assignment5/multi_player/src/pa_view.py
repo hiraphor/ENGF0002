@@ -429,20 +429,15 @@ class View(Frame):
                 dummy = DummyPacman(x, y)
                 self.lives_pacmen.append(PacmanView(self.canvas, dummy, life_pngs, []))
 
-    def died(self, pacman):
-        if len(self.__pacman_views) == 1:
-            # only one pacman - normal gameplay
-            self.__pacman_views[0].died()
-            self.audio.play(2)
+    def died(self, pacman, clear_ghosts):
+        for view in self.__pacman_views:
+            if view.pacman == pacman:
+                view.died()
+                self.audio.play(2)
+        if clear_ghosts:
             for ghost in self.__ghost_views:
                 ghost.cleanup()
             self.__ghost_views.clear()
-        else:
-            # multiple pacmen - only one dies
-            for view in self.__pacman_views:
-                if view.pacman == pacman:
-                    view.died()
-                    self.audio.play(2)
 
     def reset_level(self):
         self.clear_messages()

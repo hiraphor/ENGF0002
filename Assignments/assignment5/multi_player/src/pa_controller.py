@@ -166,10 +166,10 @@ class Controller():
     def get_lives(self):
         return self.lives
 
-    def died(self, pacman):
+    def died(self, pacman, clear_ghosts):
         if pacman.on_our_screen:
             for view in self.views:
-                view.died(pacman)
+                view.died(pacman, clear_ghosts)
         else:
             self.net.send_foreign_pacman_died()
 
