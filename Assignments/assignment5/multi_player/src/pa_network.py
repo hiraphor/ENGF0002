@@ -2,28 +2,37 @@ import socket
 import sys
 import pickle
 import select
+from time import sleep
 
 class Network():
     def __init__(self, controller, password):
         self.__controller = controller
         self.__password = password
         self.__server = False
+        self.__connected = False
         try:
             self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except socket.error as err: 
             print("socket creation failed with error %s" %(err))
             sys.exit()
         self.__recv_buf = bytes()
+        self.get_local_ip_addr()
 
 
     def server(self, port):
         self.__server = True
-        self.__sock.bind(('', port))         
-        #print("socket bound to %s" %(port) )
+        while True:
+            try:
+                self.__sock.bind(('', port))
+                break
+            except OSError as err:
+                print(err)
+                print("waiting, will retry in 10 seconds")
+                sleep(10)
   
         # put the socket into listening mode 
-        self.__sock.listen(5)      
-        #print("socket is listening")
+        self.__sock.listen(5)
+        print("listening for incoming connection...")
 
         while True: 
             # Establish connection with client. 
@@ -31,7 +40,6 @@ class Network():
             #print('Got connection from', addr)
             msg = c_sock.recv(1024)
             txt = msg.decode()
-            #print(txt)
             if txt == self.__password:
                 c_sock.send("OK\n".encode())
                 break
@@ -40,6 +48,7 @@ class Network():
         # swap the socket names so send/recv functions don't care if we're client or server
         self.__listen_sock = self.__sock
         self.__sock = c_sock
+        self.__connected = True
             
 
     def client(self, ip, port):
@@ -48,10 +57,22 @@ class Network():
         msg = self.__sock.recv(1024)
         txt = msg.decode()
         if txt == "OK\n":
-            #print("connection established\n")
-            pass
+            self.__connected = True
         else:
             print("handshake failed\n")
+
+    def get_local_ip_addr(self):
+        # ugly hacky way to find our IP address
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # connect to nrg.cs.uc.ac.uk
+        s.connect(("128.16.66.166", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+
+    @property
+    def connected(self):
+        return self.__connected
 
     def send(self, msg):
         send_bytes = pickle.dumps(msg)
@@ -94,6 +115,9 @@ class Network():
         elif msg[0] == "pacmandied":
             #A pacman has left message
             self.foreign_pacman_died(msg[1])
+        elif msg[0] == "pacmanhome":
+            #Pacman go home!
+            self.pacman_go_home(msg[1])
         elif msg[0] == "pacman":
             #A pacman update message
             self.pacman_update(msg[1])
@@ -144,6 +168,15 @@ class Network():
         #print("send pacman_died")
         payload = []
         msg = ["pacmandied", payload]
+        self.send(msg)
+
+    def pacman_go_home(self, msg):
+        self.__controller.pacman_go_home()
+
+    def send_pacman_go_home(self):
+        print("send pacman_go_home")
+        payload = []
+        msg = ["pacmanhome", payload]
         self.send(msg)
 
     def pacman_update(self, msg):

@@ -24,42 +24,59 @@ class Controller():
         self.ghosts = []
         self.pacmen = []
         self.food_coords = []
+        self.powerpill_coords = []
+        self.maze = None
+        self.net = None
         self.model = Model(self, self.serv);
-        self.init_net()
         self.add_view(View(self.root, self))
+        self.net = Network(self, self.passwd)
+        self.local_ip = self.net.get_local_ip_addr()
+        for view in self.views:
+            if self.serv:
+                view.display_msg("Waiting for Player 2 to connect\nIP addr: " + self.local_ip)
+            view.update(time.time())
+        self.root.update()
+        self.init_net()
         self.model.activate()
 
     def parse_args(self, argv):
-        print(argv)
         try:
             if "pacman.py" in argv[0]:
-                opts, args = getopt(argv[1:], "sp:", ["serv=", "pass="])
+                opts, args = getopt(argv[1:], "sc:p:", ["serv=", "conn=", "pass="])
             else:
-                opts, args = getopt(argv, "sp:", ["serv=", "pass="])
+                opts, args = getopt(argv, "sc:p:", ["serv=", "conn=", "pass="])
         except GetoptError:
             self.usage()
         self.passwd = "000000"
         self.serv = False
+        self.connect_to = "127.0.0.1"
         for opt, arg in opts:
-            print("opt:", opt, "arg:", arg)
             if opt in ("-s", "--server"):
                 self.serv = True
+            elif opt in ("-c", "--connect"):
+                self.connect_to = arg
             elif opt in ("-p", "--passwd"):
                 self.passwd = arg
             else:
                 self.usage()
-        print("serv: ", self.serv, "passwd: ", self.passwd)
+        if self.serv:
+            print("Server mode, password is ", self.passwd)
+        else:
+            print("Client mode, password is ", self.passwd, "connecting to", self.connect_to)
 
     def init_net(self):
-        self.net = Network(self, self.passwd)
         if (self.serv):
             self.net.server(9872)
         else:
-            self.net.client("127.0.0.1", 9872)
+            self.net.client(self.connect_to, 9872)
 
     def usage(self):
-        print("pacman.py [-s | --server] [-p <password> | --passwd=<password>]")
+        print("pacman.py [-s | --server] [-c <ip address> | --connect=<ip address>] \n          [-p <password> | --passwd=<password>]")
         sys.exit(2)
+
+    def display_msg(self, msg):
+        for view in self.views:
+            view.display_msg(msg)
 
     def unregister_objects(self):
         self.ghosts.clear()
@@ -93,9 +110,11 @@ class Controller():
 
     def eat(self, coords, is_powerpill):
         if is_powerpill:
-            self.powerpill_coords.remove(coords)
+            if coords in self.powerpill_coords:
+                self.powerpill_coords.remove(coords)
         else:
-            self.food_coords.remove(coords)
+            if coords in self.food_coords:
+                self.food_coords.remove(coords)
         for view in self.views:
             view.eat(coords, is_powerpill)
 
@@ -110,12 +129,13 @@ class Controller():
         for ghost in self.ghosts:
             view.register_ghost(ghost)
         view.register_food(self.food_coords)
+        view.update_maze(self.maze)
 
     #some helper functions to hide the controller implementation from
     #the model and the controller
     def update_score(self, score):
         self.score = score
-        if score > 0:
+        if self.net is not None:
             self.net.send_score_update(score)
 
     def update_remote_score(self, remote_score):
@@ -128,6 +148,7 @@ class Controller():
         self.net.send_maze(maze)
 
     def update_maze(self, maze):
+        self.maze = maze
         for view in self.views:
             view.update_maze(maze)
         
@@ -150,8 +171,6 @@ class Controller():
             for view in self.views:
                 view.died(pacman)
         else:
-            print("send_foreign_pacman_died")
-            print(pacman.status)
             self.net.send_foreign_pacman_died()
 
     def game_over(self):
@@ -205,6 +224,12 @@ class Controller():
 
     def send_foreign_pacman_left(self):
         self.net.send_foreign_pacman_left()
+
+    def pacman_go_home(self):
+        self.model.pacman_go_home()
+
+    def send_pacman_go_home(self):
+        self.net.send_pacman_go_home()
 
     def foreign_pacman_died(self):
         self.model.foreign_pacman_died()

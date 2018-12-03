@@ -3,7 +3,7 @@
 from random import *
 from enum import Enum
 import time
-from pa_settings import CANVAS_WIDTH, CANVAS_HEIGHT, GRID_SIZE, STARTUP_LIVES, Direction
+from pa_settings import CANVAS_WIDTH, CANVAS_HEIGHT, GRID_SIZE, STARTUP_LIVES, DONT_DIE, Direction
 import sys
 
 speed = 0.0
@@ -51,6 +51,7 @@ class MovableObject():
         self.__height = height
         self.__direction = direction
         self.move_speed = speed
+        self.__frozen = False
         self.__original_speed = speed
         self.__status = status
 
@@ -76,7 +77,8 @@ class MovableObject():
 
     @speed.setter
     def speed(self, value):
-        self.move_speed = value
+        if not self.__frozen:
+            self.move_speed = value
 
     @property
     def grid_position(self):
@@ -111,8 +113,20 @@ class MovableObject():
     def stop(self):
         self.move_speed = 0
 
+    def freeze(self):
+        self.move_speed = 0
+        self.__frozen = True
+
+    def unfreeze(self):
+        self.__frozen = False
+
+    @property
+    def frozen(self):
+        return self.__frozen
+
     def set_speed(self, speed_factor):
-        self.move_speed = self.__original_speed * speed_factor
+        if not self.__frozen:
+            self.move_speed = self.__original_speed * speed_factor
 
     def move(self, maze):
         global speed
@@ -193,7 +207,7 @@ class Pacman(MovableObject):
         x = GRID_SIZE * grid_x
         y = GRID_SIZE * grid_y
         MovableObject.__init__(self, x, y, width, height, direction, speed, status)
-        self.__previous_position = self.position
+        self.__previous_grid_position = self.grid_position
         self.__user_direction = Direction.NONE
 
     def reset_position(self):
@@ -204,6 +218,8 @@ class Pacman(MovableObject):
 
     ''' move due to user input '''
     def user_move(self, maze):
+        if self.frozen:
+            return
         if self.__user_direction == self.direction:
             return
         elif self.__user_direction == self.direction.opposite():
@@ -248,7 +264,8 @@ class Pacman(MovableObject):
             self.stop()
 
     def in_new_square(self):
-        if self.position != self.__previous_position:
+        if self.grid_position != self.__previous_grid_position:
+            self.__previous_grid_position = self.grid_position
             return True
         return False
 
@@ -412,7 +429,6 @@ class Ghost(MovableObject):
         self.aim_for_target(maze, 1)
         result = MovableObject.move(self, maze)
         if result:
-            #print("Collided1")
             self.aim_for_target(maze, 1)
             if self.__mode == GhostMode.FRIGHTEN or self.__mode == GhostMode.FRIGHTEN_TRAPPED:
                 self.set_speed(0.5)
@@ -420,7 +436,6 @@ class Ghost(MovableObject):
                 self.set_speed(1.0)
             result = MovableObject.move(self, maze)
         if result:
-            #print("Collided2")
             self.grid_target_x = 16
             self.grid_target_y = 17
             self.shortest_path()
@@ -431,12 +446,15 @@ class Ghost(MovableObject):
                 self.set_speed(1.0)
             result = MovableObject.move(self, maze)
 
-    def update_pacman_position(self, pac_pos, direction, maze):
-        if self.__mode == GhostMode.FRIGHTEN:
-            # run away some more...
-            self.grid_target_x, self.grid_target_y = pac_pos
-            self.shortest_path()
-            return
+    def update_pacman_position(self, pac_pos, direction, maze, \
+                               have_local, have_foreign, this_is_foreign):
+        # pacman 0 and 1 prefer to react to local pacman
+        # pacman 2 and 3 prefer to react to foreign pacman
+        # but all will react if they're frightened and pacman is close
+        react_to_pacman = this_is_foreign and (self.__ghostnum >= 2 or (not have_local)) \
+                           or ((not this_is_foreign) \
+                               and (self.__ghostnum < 2 or (not have_foreign)))
+                           
         if self.__mode == GhostMode.FRIGHTEN_TRAPPED:
             # run away again if pacman is close
             if closer_than(pac_pos, self.grid_position, 5):
@@ -445,10 +463,31 @@ class Ghost(MovableObject):
                 self.grid_target_x, self.grid_target_y = pac_pos
                 self.shortest_path()
             return
-        if self.__mode == GhostMode.CHASE and self.__ghostnum == 0:
+
+        if not react_to_pacman:
+            # ghosts 2 and 3:
+            # there's a foreign pacman about, and this isn't it.
+            # run away if it's close, but otherwise ignore it
+            if self.__mode == GhostMode.FRIGHTEN \
+               and closer_than(pac_pos, self.grid_position, 5):
+                self.set_speed(0.5)
+                self.grid_target_x, self.grid_target_y = pac_pos
+                self.shortest_path()
+            return
+
+        if self.__mode == GhostMode.FRIGHTEN:
+            # run away some more...
             self.grid_target_x, self.grid_target_y = pac_pos
             self.shortest_path()
-        if self.__mode == GhostMode.CHASE and self.__ghostnum == 1:
+            return
+        if (self.__mode == GhostMode.CHASE and 
+            ((self.__ghostnum == 0 and (not this_is_foreign)) 
+             or (self.__ghostnum == 2 and (this_is_foreign)))):
+            self.grid_target_x, self.grid_target_y = pac_pos
+            self.shortest_path()
+        if (self.__mode == GhostMode.CHASE and 
+            ((self.__ghostnum == 1 and (not this_is_foreign)) 
+             or (self.__ghostnum == 3 and (this_is_foreign)))):
             # try to aim ahead of pacman if that's possible
             pos = next_square(pac_pos, direction, 4)
             if (maze.is_wall(pos)):
@@ -480,6 +519,7 @@ class Maze():
         self.process_current_level()
 
     def reload(self, level):
+        self.__food_count = 0
         self.__current_level = level
         self.process_current_level()
 
@@ -530,7 +570,6 @@ class Maze():
             y += 1
         max_y = len(self.walls) - 1
         max_x = len(self.walls[0]) - 1
-        #self.print_walls()
 
     def print_walls(self):
         s = ""
@@ -628,6 +667,8 @@ class Maze():
                 x += 1
             dists.append(rowdists)
             y += 1
+        if target_x < 0 or target_y < 0 or target_x > max_x or target_y > max_y:
+            print(target_x, target_y, max_x, max_y)
         dists[target_y][target_x] = 0
         path_squares = []
         self.add_neighbours_to_path(target_x, target_y, path_squares, dists, 1)
@@ -696,7 +737,12 @@ class Model():
         controller.register_pacman(self.pacman)
         self.__game_mode = GameMode.STARTUP
         self.pause_speedcheck()
+        self.they_are_ready_to_restart = False
         self.won = False
+        self.controller.update_score(0)
+        self.controller.update_level(self.level)
+        self.controller.update_lives(self.lives)
+        self.controller.update_maze(self.__maze.current_level)
 
         # initialized speed measurement (see checkspeed for use)
         now = time.time()
@@ -754,11 +800,12 @@ class Model():
         self.controller.register_powerpills(powerpill_coords)
 
     def level_finished(self):
-        print("level_finished")
+        self.controller.send_status_update(GameMode.NEXT_LEVEL_WAIT)
         self.mode_change(GameMode.NEXT_LEVEL_WAIT)
 
     def died(self):
-        #self.mode_change(GameMode.DYING)
+        if DONT_DIE:
+            return
         self.pacman.died()
         self.pacman.move_speed = 0
         self.controller.died(self.pacman)
@@ -827,22 +874,23 @@ class Model():
         self.won = False
         self.controller.game_over()
         self.controller.send_status_update(GameMode.GAME_OVER)
-        self.we_are_ready_for_restart = False
-        self.they_are_ready_for_restart = False
+        self.they_are_ready_to_restart = False
 
     def remote_game_over(self):
         self.__game_mode = GameMode.GAME_OVER
         self.won = False
         self.controller.game_over()
-        self.they_are_ready_for_restart = False
+        self.they_are_ready_to_restart = False
 
     def ready_to_restart(self):
         if self.__game_mode != GameMode.GAME_OVER:
             return
         self.__game_mode = GameMode.READY_TO_RESTART
         self.controller.send_status_update(GameMode.READY_TO_RESTART)
-        if self.they_are_ready_for_restart:
+        if self.they_are_ready_to_restart:
             self.restart()
+        else:
+            self.controller.display_msg("Waiting for player 2...")
 
     def restart(self):
         self.level = 1
@@ -851,6 +899,8 @@ class Model():
         self.dont_update_speed = True
 
     def next_level(self):
+        if self.foreign_pacman is not None:
+            self.controller.send_pacman_go_home()
         self.level = self.level + 1
         self.reset_level()
 
@@ -858,7 +908,7 @@ class Model():
         self.__maze.reload(self.level)
         self.controller.update_level(self.level)
         self.pacman.reset_position()
-        if self.pacman.status == Status.AWAY:
+        if not self.pacman.on_our_screen:
             self.controller.send_foreign_pacman_left()
             self.pacman.status = Status.LOCAL
         self.lives = STARTUP_LIVES
@@ -889,24 +939,40 @@ class Model():
         if self.pacman.in_new_square():
             pos = self.pacman.grid_position
             for ghost in self.ghosts:
-                ghost.update_pacman_position(pos, self.pacman.direction, self.__maze)
+                have_local = self.pacman.on_our_screen
+                have_foreign = (self.foreign_pacman is not None)
+                this_is_foreign = False
+                ghost.update_pacman_position(pos, self.pacman.direction, self.__maze,
+                                             have_local, have_foreign, this_is_foreign)
             if maze.is_food(pos):
                 level_finished = maze.eat_food(pos)
+                maze_finished = maze
                 self.notify_eat_food(pos)
                 self.score += 10
                 self.controller.update_score(self.score)
             elif maze.is_powerpill(pos):
                 # same code for food and powerpills
-                level_finished = maze.eat_food(pos)  
+                level_finished = maze.eat_food(pos)
+                maze_finished = maze
                 self.notify_eat_powerpill(pos)
-                self.mode_change(GameMode.FRIGHTEN)
+                if maze is self.__maze:
+                    self.mode_change(GameMode.FRIGHTEN)
             elif maze.is_tunnel(pos, self.pacman.direction):
                 #newpos = self.__maze.tunnel_exit(pos)
                 #self.pacman.grid_position = newpos
                 self.go_to_other_maze(pos)
                 return
-        if level_finished:
-            print("level_finished")
+        if self.foreign_pacman is not None and self.foreign_pacman.in_new_square:
+            for ghost in self.ghosts:
+                have_local = self.pacman.on_our_screen
+                have_foreign = True
+                this_is_foreign = True
+                pos = self.foreign_pacman.grid_position
+                dirn = self.foreign_pacman.direction
+                ghost.update_pacman_position(pos, dirn, self.__maze,
+                                             have_local, have_foreign, this_is_foreign)
+            
+        if level_finished and maze_finished is self.__maze:
             self.level_finished()
         if self.pacman.status == Status.AWAY:
             self.controller.send_pacman_update(self.pacman.position,
@@ -962,12 +1028,10 @@ class Model():
                     self.controller.ghost_died()
                 elif mode == GhostMode.CHASE:
                     if self.pacman.status == Status.LOCAL:
-                        #print("died locally")
-                        pass
+                        self.died()
                     elif self.pacman.status == Status.AWAY:
                         print("died remotely")
                         self.died()
-                    #self.died()  #XXX
             
 
     def key_press(self, direction):
@@ -984,11 +1048,10 @@ class Model():
 
     def received_maze(self, maze):
         self.__remote_maze = maze
-        maze.print_walls()
+        #maze.print_walls()
 
     ''' the pacman from the remote system came through the tunnel and is now on our screen'''
     def foreign_pacman_arrived(self):
-        print("remote_pacman_arrived")
         self.foreign_pacman = Pacman(0,17, GRID_SIZE, GRID_SIZE,
                                     Direction.UP, 1, Status.FOREIGN)
         self.movables.append(self.foreign_pacman)
@@ -998,6 +1061,9 @@ class Model():
     def foreign_pacman_left(self):
         self.controller.unregister_pacman(self.foreign_pacman)
         self.foreign_pacman = None
+        # make sure the ghosts following the foreign pacman don't keep following!
+        self.ghosts[2].set_scatter_target()
+        self.ghosts[3].set_scatter_target()
 
     def foreign_pacman_died(self):
         self.foreign_pacman.speed = 0
@@ -1005,15 +1071,22 @@ class Model():
         self.controller.died(self.foreign_pacman)
 
     def foreign_pacman_update(self, pos, dir, speed):
-        self.foreign_pacman.position = pos
-        self.foreign_pacman.direction = dir
-        self.foreign_pacman.speed = speed
+        if self.foreign_pacman is not None and self.foreign_pacman.frozen == False:
+            self.foreign_pacman.position = pos
+            self.foreign_pacman.direction = dir
+            self.foreign_pacman.speed = speed
 
     def foreign_pacman_ate_ghost(self, ghostnum):
         for ghost in self.ghosts:
             if ghost.ghostnum == ghostnum:
                 if ghost.mode == GhostMode.FRIGHTEN:
-                    ghost.mode = GhostMode.EYES
+                    ghost.died()
+
+    def pacman_go_home(self):
+        self.controller.send_foreign_pacman_left()
+        self.pacman.reset_position()
+        self.pacman.status = Status.LOCAL
+        self.pacman.unfreeze()
         
     def remote_ghost_update(self, ghostnum, pos, dir, speed, mode):
         ghost = self.remote_ghosts[ghostnum]
@@ -1023,6 +1096,10 @@ class Model():
         ghost.mode = mode
 
     def remote_status_update(self, remote_status):
+        if remote_status == GameMode.NEXT_LEVEL_WAIT:
+            if not self.pacman.on_our_screen:
+                self.pacman.freeze()
+            return
         if remote_status == GameMode.GAME_OVER:
             self.remote_game_over()
         if self.__game_mode == GameMode.GAME_OVER \
@@ -1057,18 +1134,21 @@ class Model():
 
     def foreign_eat(self, pos, is_powerpill):
         # A foreign pacmac on our screen ate food or powerpill
-        print("foreign_eat\n")
         if is_powerpill:
             level_finished = self.__maze.eat_food(pos)
             self.mode_change(GameMode.FRIGHTEN)
         else:
             level_finished = self.__maze.eat_food(pos)
         self.controller.eat(pos, is_powerpill)
+        if level_finished:
+            self.level_finished()
+            if self.foreign_pacman is not None:
+                self.foreign_pacman.freeze()
+
 
     def remote_eat(self, pos, is_powerpill):
         # A remote pacman ate remote food or powerpill.
         # We need to update our copy of their maze.
-        print("remote_eat:", is_powerpill)
         if is_powerpill:
             level_finished = self.__remote_maze.eat_food(pos)
         else:
@@ -1097,11 +1177,6 @@ class Model():
         elif self.__game_mode == GameMode.STARTUP:
             if now - self.start_time > 5:
                 self.mode_change(GameMode.CHASE)
-        # having a DYING mode, where the ghosts freeze makes sense for single player,
-        # but not for multi-player
-        # elif self.__game_mode == GameMode.DYING:
-        #     if now - self.start_time > 2: 
-        #         self.new_life()
         elif self.__game_mode == GameMode.NEXT_LEVEL_WAIT:
             if now - self.start_time > 2:
                 self.next_level()

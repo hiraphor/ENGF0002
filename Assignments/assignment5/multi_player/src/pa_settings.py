@@ -5,7 +5,10 @@ from enum import IntEnum
 CANVAS_WIDTH = 650
 CANVAS_HEIGHT = 800
 GRID_SIZE = 20
-STARTUP_LIVES = 1
+STARTUP_LIVES = 5
+
+# debugging feature
+DONT_DIE = False
 
 class Direction(IntEnum):
     UP = 0

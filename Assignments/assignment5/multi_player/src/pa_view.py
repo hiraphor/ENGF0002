@@ -200,7 +200,8 @@ class View(Frame):
         self.canvas.pack(side = LEFT, fill=BOTH, expand=FALSE)
         self.__init_fonts()
         self.__init_score()
-        self.__messages_displayed = False
+        self.__messages_displayed = [False, False]
+        self.__text = [None, None]
         self.lives = 0
         self.lives_pacmen = []
         self.__ghost_views = []
@@ -440,22 +441,33 @@ class View(Frame):
         self.audio.play(1)
 
     def game_over(self):
+        self.display_msg_line1("GAME OVER!")
+        self.display_msg_line2("Press r to play again.")
+
+    def display_msg(self, msg):
+        self.clear_messages()
+        print("display_msg", msg)
+        self.display_msg_line1(msg)
+
+    def display_msg_line1(self, msg):
         x = 14 * GRID_SIZE + L_OFF
         y = 11 * GRID_SIZE + T_OFF
-        self.__text = self.canvas.create_text(x, y, anchor="c")
-        self.canvas.itemconfig(self.__text, text="GAME OVER!", font=self.__bigfont,
-                               fill="white")
+        self.__text[0] = self.canvas.create_text(x, y, anchor="c")
+        self.canvas.itemconfig(self.__text[0], text=msg, font=self.__bigfont, fill="white")
+        self.__messages_displayed[0] = True
+
+    def display_msg_line2(self, msg):
+        x = 14 * GRID_SIZE + L_OFF
         y = 17 * GRID_SIZE + T_OFF
-        self.__text2 = self.canvas.create_text(x, y, anchor="c")
-        self.canvas.itemconfig(self.__text2, text="Press r to play again.", font=self.__scorefont,
-                               fill="white")
-        self.__messages_displayed = True
+        self.__text[1] = self.canvas.create_text(x, y, anchor="c")
+        self.canvas.itemconfig(self.__text[1], text=msg, font=self.__scorefont, fill="white")
+        self.__messages_displayed[1] = True
 
     def clear_messages(self):
-        if self.__messages_displayed:
-            self.canvas.delete(self.__text)
-            self.canvas.delete(self.__text2)
-            self.__messages_displayed = False
+        for line in range(0, 2):
+            if self.__messages_displayed[line]:
+                self.canvas.delete(self.__text[line])
+            self.__messages_displayed[line] = False
 
     def update(self, now):
         for view in self.__pacman_views:
