@@ -1,11 +1,29 @@
 # Source code for the Pacman game.
 
-To run single player:
+To run single player version:
 `python3 pacman.py`
+
+To run multi-player version:
+
+One must be the client and one must be the server.
+
+To run server:
+`python3 pacman.py -s -p <passwd>`
+
+Password can be any single word password, but no spaces.  The server pacman will display its IP address on screen.
+
+To run client:
+
+`python3 pacman.py -p <passwd> -c <ipaddress>`
+
+Password must be the same as on the server, and the IP address must be
+the server's IP address.  The client and server must be on the same
+local area network, or the server must have a publicly reachable IP
+address (which is unlikely).
 
 ## Your task
 
-This task is not yet set, but feel free to play with the Pacman game.
+Details of the task are in assignment.pdf
 
 ## Controls
 
