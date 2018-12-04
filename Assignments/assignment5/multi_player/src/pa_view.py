@@ -1,4 +1,4 @@
-# Simple Frogger Game.  Mark Handley, UCL, 2018
+# Networked Pacman Game.  Mark Handley, UCL, 2018
 
 from tkinter import *
 from tkinter import font
@@ -32,6 +32,14 @@ class GameObjectView():
         for item in self.items:
             self.canvas.delete(item)
 
+def get_tuple(x):
+    if type(x) is tuple:
+        return x
+    elif type(x) is str:
+        lst = x.split(" ")
+        t = (int(lst[0]), int(lst[1]), int(lst[2]))
+        return t
+    
     
 class PacmanView(GameObjectView):
     def __init__(self, canvas, pacman, pngs, dying_pngs):
@@ -66,7 +74,7 @@ class PacmanView(GameObjectView):
             newimg = PhotoImage(width=w, height=h)
         for x in range(w):
             for y in range(h):
-                rgb = '#%02x%02x%02x' % img.get(x, y)
+                rgb = '#%02x%02x%02x' % get_tuple(img.get(x, y))
                 if dir == Direction.RIGHT: # 90 degrees
                     newimg.put(rgb, (h-y,x))
                 elif dir == Direction.LEFT: # -90 or 270 degrees
@@ -403,7 +411,7 @@ class View(Frame):
         newimg = PhotoImage(width=w, height=h)
         for x in range(w):
             for y in range(h):
-                rgb = '#%02x%02x%02x' % img.get(x, y)
+                rgb = '#%02x%02x%02x' % get_tuple(img.get(x, y))
                 newimg.put(rgb, (w-x, y))
         return newimg
 
@@ -421,20 +429,15 @@ class View(Frame):
                 dummy = DummyPacman(x, y)
                 self.lives_pacmen.append(PacmanView(self.canvas, dummy, life_pngs, []))
 
-    def died(self, pacman):
-        if len(self.__pacman_views) == 1:
-            # only one pacman - normal gameplay
-            self.__pacman_views[0].died()
-            self.audio.play(2)
+    def died(self, pacman, clear_ghosts):
+        for view in self.__pacman_views:
+            if view.pacman == pacman:
+                view.died()
+                self.audio.play(2)
+        if clear_ghosts:
             for ghost in self.__ghost_views:
                 ghost.cleanup()
             self.__ghost_views.clear()
-        else:
-            # multiple pacmen - only one dies
-            for view in self.__pacman_views:
-                if view.pacman == pacman:
-                    view.died()
-                    self.audio.play(2)
 
     def reset_level(self):
         self.clear_messages()

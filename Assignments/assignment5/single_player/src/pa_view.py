@@ -32,6 +32,13 @@ class GameObjectView():
         for item in self.items:
             self.canvas.delete(item)
 
+def get_tuple(x):
+    if type(x) is tuple:
+        return x
+    elif type(x) is str:
+        lst = x.split(" ")
+        t = (int(lst[0]), int(lst[1]), int(lst[2]))
+        return t
     
 class PacmanView(GameObjectView):
     def __init__(self, canvas, pacman, pngs, dying_pngs):
@@ -66,7 +73,7 @@ class PacmanView(GameObjectView):
             newimg = PhotoImage(width=w, height=h)
         for x in range(w):
             for y in range(h):
-                rgb = '#%02x%02x%02x' % img.get(x, y)
+                rgb = '#%02x%02x%02x' % get_tuple(img.get(x, y))
                 if dir == Direction.RIGHT: # 90 degrees
                     newimg.put(rgb, (h-y,x))
                 elif dir == Direction.LEFT: # -90 or 270 degrees
@@ -386,7 +393,7 @@ class View(Frame):
         newimg = PhotoImage(width=w, height=h)
         for x in range(w):
             for y in range(h):
-                rgb = '#%02x%02x%02x' % img.get(x, y)
+                rgb = '#%02x%02x%02x' % get_tuple(img.get(x, y))
                 newimg.put(rgb, (w-x, y))
         return newimg
 

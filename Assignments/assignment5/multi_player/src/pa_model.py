@@ -793,6 +793,7 @@ class Model():
     def reset_ghosts(self):
         for ghost in self.ghosts:
             ghost.reset_position()
+            ghost.status = GhostMode.CHASE
 
     def create_food(self):
         food_coords, powerpill_coords = self.__maze.create_food()
@@ -806,9 +807,19 @@ class Model():
     def died(self):
         if DONT_DIE:
             return
+        if self.pacman.on_our_screen:
+            #we'll need to clear out the ghosts
+            clear_ghosts = True 
+            #in the model, get the ghosts out of the way,
+            # so they don't kill any foreign pacman
+            for ghost in self.ghosts:
+                ghost.reset_position()
+                ghost.freeze()
+        else:
+            clear_ghosts = False
         self.pacman.died()
         self.pacman.move_speed = 0
-        self.controller.died(self.pacman)
+        self.controller.died(self.pacman, clear_ghosts)
 
     def ghost_died(self, ghost):
         ghost.died()
@@ -856,14 +867,20 @@ class Model():
         self.__game_mode = GameMode.CHASE
         self.pacman.move_speed = 1
         self.pacman.reset_position()
+        recreate_ghosts = False
         if self.pacman.status == Status.AWAY_DYING:
             self.controller.send_foreign_pacman_left()
         else:
+            recreate_ghosts = True
             assert(self.pacman.status == Status.LOCAL_DYING)
         self.pacman.status = Status.LOCAL
-        self.reset_ghosts()  
-        #self.create_ghosts()
-        #self.movables.append(self.pacman)
+        for ghost in self.ghosts:
+            ghost.unfreeze()
+        if recreate_ghosts:
+            self.create_ghosts()
+            self.movables.append(self.pacman)
+        else:
+            self.reset_ghosts()
         self.controller.update_lives(self.lives)
         self.controller.unregister_pacman(self.pacman)
         self.controller.register_pacman(self.pacman)
@@ -1068,7 +1085,8 @@ class Model():
     def foreign_pacman_died(self):
         self.foreign_pacman.speed = 0
         self.foreign_pacman.died()
-        self.controller.died(self.foreign_pacman)
+        clear_ghosts = False
+        self.controller.died(self.foreign_pacman, clear_ghosts)
 
     def foreign_pacman_update(self, pos, dir, speed):
         if self.foreign_pacman is not None and self.foreign_pacman.frozen == False:
