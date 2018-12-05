@@ -3,7 +3,7 @@
 from random import *
 from enum import Enum
 import time
-from pa_settings import CANVAS_WIDTH, CANVAS_HEIGHT, GRID_SIZE, STARTUP_LIVES, DONT_DIE, Direction, PAUSETIME
+from pa_settings import CANVAS_WIDTH, CANVAS_HEIGHT, GRID_SIZE, STARTUP_LIVES, DONT_DIE, Direction, PAUSETIME, LOGTIME
 import sys
 
 speed = 0.0
