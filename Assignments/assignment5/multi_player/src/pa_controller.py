@@ -319,5 +319,8 @@ class Controller():
                         s += str(t_max[i])
                         s += " "
                     print(s)
+                    t_mean = [0.0,0.0,0.0,0.0]
+                    t_max = [0.0,0.0,0.0,0.0]
+                    t_count = 0
                         
         self.root.destroy()
