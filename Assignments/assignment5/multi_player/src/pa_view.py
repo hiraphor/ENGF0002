@@ -336,11 +336,11 @@ class View(Frame):
         self.__pacman_views.append(PacmanView(self.canvas, pacman_model, self.__pacman_pngs, self.__pacman_dying_pngs))
 
     def unregister_pacman(self, pacman_model):
-        print("unregister_pacman")
+        #print("unregister_pacman")
         for view in self.__pacman_views:
             if view.pacman == pacman_model:
-                print("foound view to unregister")
-                print("status", view.pacman.status)
+                #print("foound view to unregister")
+                #print("status", view.pacman.status)
                 view.cleanup()
                 self.__pacman_views.remove(view)
                 return

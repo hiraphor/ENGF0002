@@ -7,6 +7,9 @@ CANVAS_HEIGHT = 800
 GRID_SIZE = 20
 STARTUP_LIVES = 5
 
+PAUSETIME = 0
+#PAUSETIME = 0.01
+
 # debugging feature
 DONT_DIE = False
 
