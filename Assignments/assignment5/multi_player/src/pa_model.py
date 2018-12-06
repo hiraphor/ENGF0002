@@ -159,6 +159,7 @@ class MovableObject():
             self.__x = self.__x + self.move_speed * speed
             if self.__x // GRID_SIZE != prevx // GRID_SIZE:
                 if self.collides_with_wall(maze):
+                    self.position = prevx, prevy
                     self.recentre()
                     self.stop()
                     return True
@@ -166,6 +167,7 @@ class MovableObject():
             self.__x = self.__x - self.move_speed * speed
             if self.__x // GRID_SIZE != prevx // GRID_SIZE:
                 if self.collides_with_wall(maze):
+                    self.position = prevx, prevy
                     self.recentre()
                     self.stop()
                     return True
@@ -173,6 +175,7 @@ class MovableObject():
             self.__y = self.__y - self.move_speed * speed
             if self.__y // GRID_SIZE != prevy // GRID_SIZE:
                 if self.collides_with_wall(maze):
+                    self.position = prevx, prevy
                     self.recentre()
                     self.stop()
                     return True
@@ -180,6 +183,7 @@ class MovableObject():
             self.__y = self.__y + self.move_speed * speed
             if self.__y // GRID_SIZE != prevy // GRID_SIZE:
                 if self.collides_with_wall(maze):
+                    self.position = prevx, prevy
                     self.recentre()
                     self.stop()
                     return True
