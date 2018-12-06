@@ -10,6 +10,7 @@ STARTUP_LIVES = 5
 PAUSETIME = 0
 #PAUSETIME = 0.01
 LOGTIME = False
+PARTIAL_UPDATE = False
 
 # debugging feature
 DONT_DIE = False
